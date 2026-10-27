@@ -1,0 +1,25 @@
+---
+// Compact rows: name, duration · what's included, price. Each row links to the detail page.
+import { url, type Ctx } from '../lib/routes';
+import { cardText, displayName, durationLabel, servicePrice, type Service } from '../lib/data';
+
+interface Props { ctx: Ctx; items: Service[]; showDesc?: boolean; class?: string; }
+const { ctx, items, showDesc = true, class: cls } = Astro.props;
+const { lang } = ctx;
+---
+<ul class:list={['price-list', cls]}>
+  {items.map((s) => {
+    const meta = [durationLabel(s, lang), showDesc ? cardText(s, lang, 4) : ''].filter(Boolean).join(' · ');
+    return (
+      <li>
+        <a class="price-row" href={url(ctx, `services/${s.key}`)}>
+          <span>
+            <span class="name">{displayName(s.t[lang].name)}</span>
+            {meta && <span class="desc">{meta}</span>}
+          </span>
+          <span class="amount">{servicePrice(s, lang)}</span>
+        </a>
+      </li>
+    );
+  })}
+</ul>

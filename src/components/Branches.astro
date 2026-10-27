@@ -1,0 +1,34 @@
+---
+import Hours from './Hours.astro';
+import { t } from '../i18n/ui';
+import { LANG_META } from '../i18n/langs';
+import { bookingUrl, type Ctx } from '../lib/routes';
+import { branches, formatPhone, telHref, chatLink } from '../lib/data';
+
+interface Props { ctx: Ctx; map?: boolean; headingLevel?: 'h2' | 'h3'; }
+const { ctx, map = false, headingLevel: H = 'h2' } = Astro.props;
+const { lang } = ctx;
+// Embedded maps carry their own UI language; match the page.
+const mapIn = (src: string) =>
+  src.replace(/!1s[a-z]+!2s[a-z]*/g, `!1s${LANG_META[lang].html}!2svn`).replace(/([?&])hl=[a-z-]+/i, `$1hl=${LANG_META[lang].html}`);
+---
+<div class="branches">
+  {branches.map((b) => (
+    <article class="branch" id={b.key}>
+      <div class="branch-body">
+        <H class="display h3" lang="vi">{b.name}</H>
+        <dl>
+          <div><dt>{t(lang, 'address')}</dt><dd>{b.address}</dd></div>
+          <div><dt>{t(lang, 'hours')}</dt><dd><Hours lang={lang} /></dd></div>
+          <div><dt>{t(lang, 'phone')}</dt><dd><a class="link nowrap" href={telHref(b.phone)}>{formatPhone(b.phone)}</a></dd></div>
+        </dl>
+        <div class="actions">
+          <a class="btn btn-primary" href={bookingUrl(ctx, { branch: b.key })}>{t(lang, 'bookHere')}</a>
+          <a class="btn btn-ghost" href={b.mapUrl} rel="noopener">{t(lang, 'directions')}</a>
+          <a class="btn btn-ghost" href={chatLink(lang, b, `${t(lang, 'f_greeting')} ${b.name}`).href} rel="noopener">{chatLink(lang, b).label}</a>
+        </div>
+      </div>
+      {map && <iframe class="branch-map" src={mapIn(b.mapEmbed)} title={t(lang, 'mapOf', { name: b.name })} loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>}
+    </article>
+  ))}
+</div>

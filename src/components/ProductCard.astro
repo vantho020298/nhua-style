@@ -1,0 +1,21 @@
+---
+import Img from './Img.astro';
+import { url, type Ctx } from '../lib/routes';
+import { formatPrice, type Product } from '../lib/data';
+
+interface Props { ctx: Ctx; product: Product; }
+const { ctx, product: p } = Astro.props;
+const { lang } = ctx;
+const href = url(ctx, `products/${p.key}`);
+---
+<article class="card">
+  <a class="card-media" style="aspect-ratio: 1;" href={href} tabindex="-1" aria-hidden="true">
+    <Img src={p.image} alt="" widths={[360, 720]} sizes="(max-width: 640px) 100vw, 300px" />
+  </a>
+  <div class="card-body">
+    {p.brand && <div class="card-meta"><span>{p.brand}</span></div>}
+    <h3 class="card-title" style="font-size: 20px;"><a href={href}>{p.t[lang].name}</a></h3>
+    <p class="card-text">{p.t[lang].summary}</p>
+    <div class="card-foot"><span class="price">{formatPrice(p.price, lang)}</span></div>
+  </div>
+</article>

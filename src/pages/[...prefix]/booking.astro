@@ -1,0 +1,382 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHead from '../../components/PageHead.astro';
+import Hours from '../../components/Hours.astro';
+import { t, ui } from '../../i18n/ui';
+import { LANG_META } from '../../i18n/langs';
+import { contextPaths, type Ctx } from '../../lib/routes';
+import { SERVICE_GROUPS, servicesIn, branches, team, displayName, servicePrice, formatPhone, telHref } from '../../lib/data';
+import { hours, site } from '../../config/site';
+import { Image } from 'astro:assets';
+import wechatQr from '../../assets/photos/wechat-qr.png';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+// One number serves every shop.
+const phone = branches[0].phone;
+
+// Local guests mostly use Zalo, Chinese visitors WeChat, other visitors from abroad WhatsApp.
+const channels = [
+  { id: 'whatsapp', label: 'WhatsApp' },
+  { id: 'zalo', label: 'Zalo' },
+  { id: 'wechat', label: t(lang, 'wechatLabel') },
+].sort((a, b) => (lang === 'vi' ? Number(b.id === 'zalo') - Number(a.id === 'zalo') : lang === 'zh' ? Number(b.id === 'wechat') - Number(a.id === 'wechat') : 0));
+
+// Most visitors come for a haircut: single services (haircut first) lead the list.
+const bookingGroups = (['single', 'signature', 'relax', 'chemical'] as const)
+  .map((g) => ({ g, items: servicesIn(g) }))
+  .filter((group) => group.items.length);
+
+// Labels in Vietnamese (for staff) and the visitor's language, e.g. "Dịch vụ / Service".
+const both = (key: keyof typeof ui) => (lang === 'vi' ? ui[key].vi : `${ui[key].vi} / ${ui[key][lang]}`);
+const bookingData = {
+  // In the guest's language and in Vietnamese, like the field labels, so the staff can read it.
+  greeting: [...new Set([t(lang, 'f_greeting'), t('vi', 'f_greeting')])].join('\n'),
+  required: t(lang, 'f_required'),
+  copied: t(lang, 'f_copied'),
+  copiedWechat: t(lang, 'f_copiedWechat'),
+  copyFail: t(lang, 'f_copyFail'),
+  sent: t(lang, 'f_sent'),
+  showLang: lang !== 'vi',
+  locale: LANG_META[lang].number,
+  lang: LANG_META[lang].html,
+  estimateLabel: t(lang, 'f_estimate'),
+  sameService: t(lang, 'f_sameService'),
+  language: LANG_META[lang].label,
+  labels: {
+    branch: both('f_branch'), service: both('f_service'), service2: both('f_service2').replace(/\s*[（(][^）)]*[）)]/g, ''), barber: both('f_barber').replace(/\s*[（(][^）)]*[）)]/g, ''),
+    date: both('f_date'), time: both('f_time'), people: both('f_people'), name: both('m_name'),
+    contact: lang === 'vi' ? ui.f_contact.vi : `${ui.m_contact.vi} / ${ui.f_contact[lang]}`, person2: both('f_person2'), note: both('f_note'), lang: both('f_lang'), estimate: both('f_estimate'),
+  },
+  hours,
+  branches: branches.map((b) => ({ key: b.key, name: b.name, whatsapp: b.whatsapp, zalo: b.zalo })),
+  services: Object.fromEntries(SERVICE_GROUPS.flatMap((g) => servicesIn(g)).map((s) => [s.key, {
+    vi: displayName(s.t.vi.name),
+    local: displayName(s.t[lang].name),
+    price: servicePrice(s, lang),
+    from: s.price,
+    to: s.priceTo ?? s.price,
+    // The VIP package has no stated duration; with 12 services it runs about three hours.
+    minutes: s.durationTo ?? s.duration ?? (s.group === 'signature' ? 180 : null),
+  }])),
+};
+---
+<Layout ctx={ctx} path="booking" title={t(lang, 'bookingTitle')} description={t(lang, 'bookingLead')}>
+  <PageHead ctx={ctx} title={t(lang, 'bookingTitle')} lead={t(lang, 'bookingLead')} />
+
+  <div class="container detail" style="padding-bottom: var(--section);">
+    <form class="form" id="booking-form" novalidate>
+      <fieldset class="field" style="border: 0; padding: 0; margin: 0;">
+        <legend>{t(lang, 'f_branch')} <span class="req">*</span></legend>
+        <div class="choice">
+          {branches.map((b, i) => (
+            <label>
+              <input type="radio" name="branch" value={b.key} checked={i === 0} />
+              <span><strong>{b.name}</strong><br /><span class="muted" style="font-size: 14px;">{b.address}</span></span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label for="f-people">{t(lang, 'f_people')}</label>
+        <select class="input" id="f-people" name="people">
+          {[1, 2, 3, 4, 5, 6].map((n) => <option value={n}>{n}</option>)}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-service"><span id="f-service-label" data-one={t(lang, 'f_service')} data-two={t(lang, 'f_person1')}>{t(lang, 'f_service')}</span> <span class="req">*</span></label>
+        <select class="input" id="f-service" name="service" required>
+          <option value="">{t(lang, 'f_choose')}</option>
+          {bookingGroups.map(({ g, items }) => (
+            <optgroup label={t(lang, `group_${g}`)}>
+              {items.map((s) => <option value={s.key}>{displayName(s.t[lang].name)} — {servicePrice(s, lang)}</option>)}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="f-service2" id="f-service2-label" data-one={t(lang, 'f_service2')} data-two={t(lang, 'f_person2')}>{t(lang, 'f_service2')}</label>
+        <select class="input" id="f-service2" name="service2">
+          <option value="">{t(lang, 'f_none')}</option>
+          {bookingGroups.map(({ g, items }) => (
+            <optgroup label={t(lang, `group_${g}`)}>
+              {items.map((s) => <option value={s.key}>{displayName(s.t[lang].name)} — {servicePrice(s, lang)}</option>)}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-date">{t(lang, 'f_date')} <span class="req">*</span></label>
+          <input class="input" type="date" id="f-date" name="date" required />
+        </div>
+        <div class="field">
+          <label for="f-time">{t(lang, 'f_time')} <span class="req">*</span></label>
+          <select class="input" id="f-time" name="time" required><option value="">{t(lang, 'f_chooseTime')}</option></select>
+        </div>
+      </div>
+
+      <p class="estimate" id="f-estimate" aria-live="polite" hidden></p>
+      <p class="hint" id="f-group" hidden>{t(lang, 'f_groupHint')}</p>
+
+      <div class="field">
+        <label for="f-barber">{t(lang, 'f_barber')}</label>
+        <select class="input" id="f-barber" name="barber">
+          <option value="">{t(lang, 'f_anyone')}</option>
+          {team.map((m) => <option value={m.name} data-key={m.key}>{m.name} · {t(lang, `role_${m.role}`)}</option>)}
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-name">{t(lang, 'f_name')} <span class="req">*</span></label>
+          <input class="input" id="f-name" name="name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="f-contact">{t(lang, 'f_contact')} <span class="req">*</span></label>
+          <input class="input" id="f-contact" name="contact" type={lang === 'zh' ? 'text' : 'tel'} autocomplete="tel" placeholder={t(lang, 'f_contactPh')} required />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-note">{t(lang, 'f_note')}</label>
+        <textarea class="input" id="f-note" name="note" placeholder={t(lang, 'f_notePh')}></textarea>
+      </div>
+
+      <div class="field">
+        <span style="font-weight: 600;">{t(lang, 'f_preview')}</span>
+        <pre class="message-preview" id="f-preview" aria-live="polite"></pre>
+        {lang !== 'vi' && <p class="muted hint">{t(lang, 'f_bilingual')}</p>}
+      </div>
+
+      <div class="field">
+        <span style="font-weight: 600;">{t(lang, 'f_send')}</span>
+        <p class="hint">{t(lang, 'f_pasteHint')}</p>
+        <div class="actions">
+          {channels.map((c, i) => (
+            <button class:list={['btn', i === 0 ? 'btn-primary' : 'btn-ghost']} type="submit" data-channel={c.id}>{c.label}</button>
+          ))}
+        </div>
+        <p class="form-status" id="f-status" role="status"></p>
+        <div class="wechat" id="f-wechat" hidden>
+          <Image src={wechatQr} alt={`WeChat QR · ${site.wechat.name}`} width={220} format="png" />
+          <p>{t(lang, 'f_wechatHint', { name: site.wechat.name })}</p>
+        </div>
+        <p class="hint">{t(lang, 'f_noApp')} <a class="link nowrap" href={telHref(phone)}>{formatPhone(phone)}</a></p>
+      </div>
+    </form>
+
+    <aside class="detail-aside">
+      <strong>{t(lang, 'hours')}</strong>
+      <p class="muted"><Hours lang={lang} /></p>
+      <ul class="note-list">
+        <li>{t(lang, 'bookingNote1')}</li>
+        <li>{t(lang, 'bookingNote2')}</li>
+        <li>{t(lang, 'bookingNote3')}</li>
+      </ul>
+      <strong>{t(lang, 'bookingOrCall')}</strong>
+      <a class="call" href={telHref(phone)}><span>{site.name}</span><strong>{formatPhone(phone)}</strong></a>
+    </aside>
+  </div>
+
+  <script type="application/json" id="booking-data" set:html={JSON.stringify(bookingData)} />
+</Layout>
+
+<script>
+  type Data = {
+    greeting: string; required: string; copied: string; copiedWechat: string; copyFail: string; sent: string; showLang: boolean; language: string;
+    locale: string; lang: string; estimateLabel: string; sameService: string;
+    labels: Record<string, string>;
+    hours: { monday: { open: string; close: string }; other: { open: string; close: string } };
+    branches: { key: string; name: string; whatsapp: string; zalo: string }[];
+    services: Record<string, { vi: string; local: string; price: string; from: number | null; to: number | null; minutes: number | null }>;
+  };
+
+  const data: Data = JSON.parse(document.getElementById('booking-data')!.textContent!);
+  const form = document.getElementById('booking-form') as HTMLFormElement;
+  const preview = document.getElementById('f-preview')!;
+  const status = document.getElementById('f-status')!;
+  const field = <T extends HTMLElement>(name: string) => form.elements.namedItem(name) as unknown as T;
+  const dateInput = field<HTMLInputElement>('date');
+  const timeSelect = field<HTMLSelectElement>('time');
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  // Opening hours are Vietnam time, whatever the visitor's phone is set to.
+  const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+  dateInput.min = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  // Pre-fill from links like /booking/?service=combo-basic&barber=son-le&branch=…
+  const params = new URLSearchParams(location.search);
+  if (params.get('service')) field<HTMLSelectElement>('service').value = params.get('service')!;
+  if (params.get('branch')) form.querySelectorAll<HTMLInputElement>('input[name="branch"]').forEach((r) => (r.checked = r.value === params.get('branch')));
+  if (params.get('barber')) {
+    const opt = form.querySelector<HTMLOptionElement>(`#f-barber option[data-key="${CSS.escape(params.get('barber')!)}"]`);
+    if (opt) opt.selected = true;
+  }
+
+  // Half-hour slots from opening until the chosen service (at least an hour) still ends before
+  // closing. Monday opens later.
+  const toMin = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3));
+  const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  function slots(date: string): string[] {
+    const day = new Date(`${date}T00:00`).getDay();
+    const { open, close } = day === 1 ? data.hours.monday : data.hours.other;
+    const minutes = (name: string) => data.services[field<HTMLSelectElement>(name).value]?.minutes ?? 0;
+    // One guest does both services back to back; two guests are served side by side.
+    const together = Number(field<HTMLSelectElement>('people').value) >= 2;
+    const length = Math.max(60, together ? Math.max(minutes('service'), minutes('service2')) : minutes('service') + minutes('service2'));
+    const earliest = date === dateInput.min ? today.getHours() * 60 + today.getMinutes() + 30 : 0;
+    const out: string[] = [];
+    for (let m = toMin(open); m <= toMin(close) - length; m += 30) {
+      if (m >= earliest) out.push(`${pad(Math.floor(m / 60))}:${pad(m % 60)}`);
+    }
+    return out;
+  }
+  function fillTimes() {
+    const chosen = timeSelect.value;
+    timeSelect.length = 1;
+    if (!dateInput.value) return;
+    for (const v of slots(dateInput.value)) timeSelect.add(new Option(v, v, false, v === chosen));
+  }
+  // Start on the first day that still has a free slot, so the time list is never empty.
+  if (!dateInput.value) {
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    dateInput.value = slots(dateInput.min).length ? dateInput.min : iso(tomorrow);
+  }
+
+  // "Thứ Bảy, 25/10/2026": the shop reads the date the Vietnamese way, with the weekday to avoid mix-ups.
+  // The visitor's own weekday is added so they can check it too: "Chủ Nhật (일요일), 25/10/2026".
+  const formatDay = (value: string) => {
+    const d = new Date(`${value}T00:00`);
+    const vi = new Intl.DateTimeFormat('vi-VN', { weekday: 'long' }).format(d);
+    const local = data.lang === 'vi' ? '' : ` (${new Intl.DateTimeFormat(data.lang, { weekday: 'long' }).format(d)})`;
+    const date = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d);
+    return `${vi.charAt(0).toUpperCase()}${vi.slice(1)}${local}, ${date}`;
+  };
+
+  // "300,000₫ + 100,000₫ = 400,000₫" for two services, "4 × 320,000₫ = 1,280,000₫ (if everyone has the
+  // same service)" for a group of one service; ranges stay ranges. Two services for a group could be
+  // split any way between people, so no total is shown then.
+  // Two guests with two services: one service each, as most couples mean it.
+  const pairMode = () =>
+    Number(field<HTMLSelectElement>('people').value) === 2 && !!field<HTMLSelectElement>('service2').value;
+
+  function estimate(): string {
+    const picked = [field<HTMLSelectElement>('service').value, field<HTMLSelectElement>('service2').value]
+      .filter((key, i, all) => key && all.indexOf(key) === i)
+      .map((key) => data.services[key]);
+    const people = Number(field<HTMLSelectElement>('people').value) || 1;
+    if (!picked.length || picked.some((x) => x?.from == null)) return '';
+    if (picked.length === 1 && people < 2) return '';
+    const num = (n: number) => new Intl.NumberFormat(data.locale).format(n);
+    const money = (lo: number, hi: number) => (lo === hi ? `${num(lo)}₫` : `${num(lo)} – ${num(hi)}₫`);
+    const lo = picked.reduce((sum, x) => sum + x.from!, 0);
+    const hi = picked.reduce((sum, x) => sum + x.to!, 0);
+    if (people < 2 || pairMode()) return `${picked.map((x) => money(x.from!, x.to!)).join(' + ')} = ${money(lo, hi)}`;
+    const each = lo === hi && picked.length === 1 ? money(lo, hi) : `(${picked.map((x) => money(x.from!, x.to!)).join(' + ')})`;
+    return `${people} × ${each} = ${money(people * lo, people * hi)} (${data.sameService})`;
+  }
+
+  function message(): string {
+    const f = new FormData(form);
+    const get = (k: string) => String(f.get(k) ?? '').trim();
+    const branch = data.branches.find((b) => b.key === get('branch'));
+    const svc = data.services[get('service')];
+    const svc2 = data.services[get('service2')];
+    const describe = (x: typeof svc) => `${x.vi}${x.local !== x.vi ? ` (${x.local})` : ''} – ${x.price}`;
+    const L = data.labels;
+    const lines: [string, string][] = [
+      [L.branch, branch?.name ?? ''],
+      [L.service, svc ? describe(svc) : ''],
+      [pairMode() ? L.person2 : L.service2, svc2 && svc2 !== svc ? describe(svc2) : ''],
+      [L.barber, get('barber')],
+      [L.date, get('date') ? formatDay(get('date')) : ''],
+      [L.time, get('time')],
+      [L.people, get('people')],
+      [L.name, get('name')],
+      [L.contact, get('contact')],
+      [L.note, get('note')],
+      [L.lang, data.showLang ? data.language : ''],
+    ];
+    const total = estimate();
+    if (total) lines.splice(7, 0, [L.estimate, total]);
+    return [data.greeting, ...lines.filter(([, v]) => v).map(([k, v]) => `• ${k}: ${v}`)].join('\n');
+  }
+
+  const estimateBox = document.getElementById('f-estimate')!;
+  const refresh = () => {
+    preview.textContent = message();
+    const total = estimate();
+    estimateBox.hidden = !total;
+    document.getElementById('f-group')!.hidden = (Number(field<HTMLSelectElement>('people').value) || 1) < 3;
+    const perPerson = pairMode() || Number(field<HTMLSelectElement>('people').value) === 2;
+    for (const label of [document.getElementById('f-service-label')!, document.getElementById('f-service2-label')!]) {
+      label.textContent = (perPerson ? label.dataset.two : label.dataset.one) ?? '';
+    }
+    estimateBox.textContent = total ? `${data.estimateLabel}: ${total}` : '';
+  };
+  dateInput.addEventListener('change', fillTimes);
+  field<HTMLSelectElement>('service').addEventListener('change', fillTimes);
+  field<HTMLSelectElement>('service2').addEventListener('change', fillTimes);
+  field<HTMLSelectElement>('people').addEventListener('change', fillTimes);
+  form.addEventListener('input', refresh);
+  form.addEventListener('change', refresh);
+  fillTimes();
+  refresh();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const missing = ['service', 'date', 'time', 'name', 'contact'].filter((k) => !String(new FormData(form).get(k) ?? '').trim());
+    form.querySelectorAll('[aria-invalid]').forEach((el) => el.removeAttribute('aria-invalid'));
+    if (missing.length) {
+      missing.forEach((k) => field<HTMLElement>(k).setAttribute('aria-invalid', 'true'));
+      field<HTMLElement>(missing[0]).focus();
+      status.textContent = data.required;
+      status.classList.add('error');
+      return;
+    }
+    status.classList.remove('error');
+    const text = message();
+    const branch = data.branches.find((b) => b.key === new FormData(form).get('branch'))!;
+    const channel = ((e as SubmitEvent).submitter as HTMLElement | null)?.dataset.channel ?? 'whatsapp';
+    if (channel === 'whatsapp') {
+      window.open(`https://wa.me/${branch.whatsapp}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+      status.textContent = data.sent;
+      return;
+    }
+    // Zalo and WeChat links cannot carry text, so copy it for the visitor to paste. Start
+    // the copy and open the chat in the same tap: Safari blocks pop-ups opened after an await.
+    // WeChat has no web link to a personal account, so its QR code is shown instead.
+    const copy = navigator.clipboard?.writeText(text) ?? Promise.reject();
+    const wechat = document.getElementById('f-wechat')!;
+    wechat.hidden = channel !== 'wechat';
+    if (channel === 'zalo') window.open(`https://zalo.me/${branch.zalo}`, '_blank', 'noopener');
+    else wechat.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    try {
+      await copy;
+      status.textContent = channel === 'wechat' ? data.copiedWechat : data.copied;
+    } catch {
+      status.textContent = data.copyFail;
+      getSelection()?.selectAllChildren(preview);
+    }
+  });
+</script>
+
+<style>
+  [aria-invalid='true'] { outline: 2px solid #D93025; }
+  .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+  .hint { font-size: 15px; margin: 4px 0 10px; color: var(--muted); }
+  .wechat { display: grid; justify-items: start; gap: 10px; padding: 16px; border: 1px solid var(--line); border-radius: min(var(--radius), 14px); background: var(--surface); }
+  .wechat img { width: 200px; height: auto; border-radius: 8px; }
+  .estimate { margin: -8px 0 0; padding: 12px 16px; border-radius: min(var(--radius), 10px); background: var(--surface-2); font-weight: 600; }
+  .call { display: grid; gap: 2px; padding: 12px 16px; border: 1px solid var(--line-strong); border-radius: min(var(--radius), 14px); font-size: 14px; }
+  .call strong { font-size: 18px; white-space: nowrap; color: var(--link); }
+  .call:hover { background: var(--surface-2); }
+</style>

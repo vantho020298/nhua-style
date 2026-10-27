@@ -1,0 +1,22 @@
+[
+  {
+    "key": "nhua-style-pro-barber-shop",
+    "name": "Nhựa Pro Barber Shop",
+    "address": "187 Lê Quang Đạo, Ngũ Hành Sơn, Đà Nẵng",
+    "phone": "0908401384",
+    "email": "nhuaprobarbershop187@gmail.com",
+    "hoursRaw": "Thứ Hai: 09:30 - 20h00; Thứ Ba – Chủ Nhật: 08:30 - 20h00",
+    "mapUrl": "https://www.google.com/maps/place/Nh%E1%BB%B1a+Style+Pro+Barber+Shop/@16.048974,108.246064,16z/data=!4m15!1m8!3m7!1s0x31421764e6534801:0xc1120e1c50cc338a!2zMTg3IEzDqiBRdWFuZyDEkOG6oW8sIE5nxakgSMOgbmggU8ahbiwgxJDDoCBO4bq1bmcgNTAwMDAsIFZpZXRuYW0!3b1!8m2!3d16.0489742!4d108.2460638!16s%2Fg%2F11kmct7drq!3m5!1s0x314217a110dd51a1:0xd1f3fc940f751a28!8m2!3d16.0489686!4d108.2460205!16s%2Fg%2F11np9f0jpz?hl=en-US&entry=ttu&g_ep=EgoyMDI2MDgzMC4wIKXMDSoASAFQAw%3D%3D",
+    "mapEmbed": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d7668.636221133924!2d108.246064!3d16.048974!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314217a110dd51a1%3A0xd1f3fc940f751a28!2sNh%E1%BB%B1a%20Style%20Pro%20Barber%20Shop!5e0!3m2!1sen!2sus!4v1788339315629!5m2!1sen!2sus"
+  },
+  {
+    "key": "nhua-style-pro-barber-shop-2",
+    "name": "Nhựa Style Pro Barber Shop",
+    "address": "175 Nguyễn Phan Vinh, Sơn Trà, Đà Nẵng",
+    "phone": "0352884401",
+    "email": null,
+    "hoursRaw": "Thứ Hai: 09:30 - 20h00 Thứ Ba – Chủ Nhật: 08:30 - 20h00",
+    "mapUrl": "https://maps.app.goo.gl/Q2rEnnZn4e5n3MmQ7",
+    "mapEmbed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d30670.349003484287!2d108.18539352668867!3d16.076195599999995!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314219c7e7552bcd%3A0xf66338659a1122a0!2sNh%E1%BB%B1a%20Style%20pro%20Barber%20Shop%20(%20c%E1%BA%AFt%20t%C3%B3c%20nam%20)!5e0!3m2!1svi!2s!4v1789052027633!5m2!1svi!2s"
+  }
+]

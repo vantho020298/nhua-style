@@ -1,0 +1,106 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { LANGS, LANG_META, DEFAULT_LANG } from '../i18n/langs';
+import { t } from '../i18n/ui';
+import { BASE, url, switchLang, type Ctx } from '../lib/routes';
+import { branches } from '../lib/data';
+import { site } from '../config/site';
+import { getImage } from 'astro:assets';
+import ogDefault from '../assets/photos/team.jpg';
+
+interface Props {
+  ctx: Ctx;
+  /** Page path without theme/language prefix, e.g. "services/combo-basic". */
+  path?: string;
+  title?: string;
+  description?: string;
+  image?: ImageMetadata;
+  schema?: object[];
+  /** The 404 page: no canonical/alternates, never indexed. */
+  notFound?: boolean;
+}
+
+const { ctx, path = '', title, description, image, schema = [], notFound = false } = Astro.props;
+const { lang } = ctx;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${t(lang, 'homeTitle')}`;
+// Search snippets show ~155 characters: short page leads get the shop and city added (not in
+// Japanese, Korean or Chinese, where the lead alone already fills the snippet),
+// long service intros are cut at a word boundary.
+const metaDescription = (text: string) => {
+  const base = text.trim();
+  if (description && base.length < 90 && !['ja', 'ko', 'zh'].includes(lang)) return `${base} ${t(lang, 'metaPlace')}`.trim();
+  if (base.length <= 160) return base;
+  return `${base.slice(0, 155).replace(/[\s,;:–-]+\S*$/, '')}…`;
+};
+const desc = metaDescription(description || t(lang, 'metaHome'));
+const abs = (p: string) => new URL(p, Astro.site).href;
+const canonical = abs(url(ctx, path));
+const og = await getImage({ src: image ?? ogDefault, width: 1200, height: 630, format: 'jpg', fit: 'cover' });
+const { ga4, facebookPixel } = site.analytics;
+---
+<!doctype html>
+<html lang={LANG_META[lang].html}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    {!notFound && (
+      <>
+        <link rel="canonical" href={canonical} />
+        {LANGS.map((l) => <link rel="alternate" hreflang={LANG_META[l].html} href={abs(switchLang(ctx, l, path))} />)}
+        <link rel="alternate" hreflang="x-default" href={abs(switchLang(ctx, DEFAULT_LANG, path))} />
+      </>
+    )}
+    {notFound && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" content={site.themeColor} />
+    <link rel="icon" href={`${BASE}/favicon.png`} type="image/png" />
+    <link rel="apple-touch-icon" href={`${BASE}/apple-touch-icon.png`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={abs(og.src)} />
+    <meta property="og:locale" content={LANG_META[lang].og} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href={site.fonts} />
+    {schema.map((s) => <script type="application/ld+json" set:html={JSON.stringify(s)} />)}
+    {ga4 && (
+      <>
+        <script async src={`https://www.googletagmanager.com/gtag/js?id=${ga4}`}></script>
+        <script is:inline define:vars={{ ga4 }}>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config',ga4);</script>
+      </>
+    )}
+    {facebookPixel && (
+      <script is:inline define:vars={{ facebookPixel }}>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',facebookPixel);fbq('track','PageView');</script>
+    )}
+  </head>
+  <body>
+    <a class="skip" href="#main">{t(lang, 'skip')}</a>
+    <Header ctx={ctx} path={path} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer ctx={ctx} path={path} />
+    {path !== 'booking' && <nav class="mobile-book" aria-label={t(lang, 'bookNow')}>
+      <a class="primary" href={url(ctx, 'booking')}>{t(lang, 'bookNow')}</a>
+      {lang === 'vi'
+        ? <a class="secondary" href={`https://zalo.me/${branches[0].zalo}`}>Zalo</a>
+        : <a class="secondary" href={`https://wa.me/${branches[0].whatsapp}`}>WhatsApp</a>}
+    </nav>}
+    <script>
+      // The sticky bar repeats the page's own booking button: keep it out of the way while that
+      // button is on screen.
+      const bar = document.querySelector<HTMLElement>('.mobile-book');
+      const cta = document.querySelector('main .btn-primary');
+      if (bar && cta && 'IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => bar.classList.toggle('is-hidden', entry.isIntersecting)).observe(cta);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+---
+import logo from '../assets/photos/logo-style.jpg';
+import { Image } from 'astro:assets';
+import LangSwitch from './LangSwitch.astro';
+import { t } from '../i18n/ui';
+import { url, type Ctx } from '../lib/routes';
+import { site } from '../config/site';
+
+interface Props { ctx: Ctx; path: string; }
+const { ctx, path } = Astro.props;
+const { lang } = ctx;
+
+const links = [
+  { path: 'services', label: t(lang, 'services') },
+  { path: 'team', label: t(lang, 'team') },
+  { path: 'gallery', label: t(lang, 'gallery') },
+  { path: 'locations', label: t(lang, 'locations') },
+];
+const more = [
+  { path: 'about', label: t(lang, 'about') },
+  { path: 'products', label: t(lang, 'products') },
+];
+const section = path.split('/')[0];
+---
+<header class="site-header">
+  <div class="container bar">
+    <a class="brand" href={url(ctx)}>
+      <Image src={logo} alt="" width={88} loading="eager" />
+      <span>{site.shortName}</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      {links.map((l) => (
+        <a href={url(ctx, l.path)} aria-current={section === l.path ? 'page' : undefined}>{l.label}</a>
+      ))}
+    </nav>
+    <div class="header-actions">
+      <LangSwitch ctx={ctx} path={path} />
+      <a class="btn btn-primary" href={url(ctx, 'booking')}>{t(lang, 'bookNow')}</a>
+      <details class="dropdown menu-toggle mobile-nav">
+        <summary aria-label={t(lang, 'menu')}>
+          <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg>
+        </summary>
+        <nav class="dropdown-panel" aria-label="Mobile">
+          <a href={url(ctx)}>{t(lang, 'home')}</a>
+          {[...links, ...more].map((l) => <a href={url(ctx, l.path)}>{l.label}</a>)}
+          <a href={url(ctx, 'booking')}><strong>{t(lang, 'bookNow')}</strong></a>
+        </nav>
+      </details>
+    </div>
+  </div>
+</header>
+
+<script>
+  // Close an open dropdown when clicking elsewhere or pressing Escape.
+  const close = (except?: Element | null) =>
+    document.querySelectorAll('details.dropdown[open]').forEach((d) => d !== except && d.removeAttribute('open'));
+  document.addEventListener('click', (e) => close((e.target as Element).closest('details.dropdown')));
+  document.addEventListener('keydown', (e) => e.key === 'Escape' && close());
+</script>

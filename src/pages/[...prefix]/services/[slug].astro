@@ -1,0 +1,74 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import ServiceCard from '../../../components/ServiceCard.astro';
+import Img from '../../../components/Img.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, bookingUrl, url, type Ctx } from '../../../lib/routes';
+import { services, servicesIn, serviceByKey, displayName, durationLabel, servicePrice, serviceText, sentence, branches, chatLink, type Service } from '../../../lib/data';
+import { serviceSchema } from '../../../lib/schema';
+import { imageMeta } from '../../../lib/images';
+
+export function getStaticPaths() {
+  return contextPaths(() => services.map((s) => ({ slug: s.key })));
+}
+
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const s = services.find((x) => x.key === Astro.params.slug) as Service;
+const tr = s.t[lang];
+const name = displayName(tr.name);
+const { intro, body } = serviceText(s, lang);
+const path = `services/${s.key}`;
+const isPackage = s.group === 'signature' || s.group === 'relax';
+// A haircut pairs with a wash, a shave or the basic combo rather than nail care.
+const RELATED: Record<string, string[]> = {
+  'cat-toc': ['goi-dau-duong-sinh', 'cao-mat-lam-rau', 'combo-basic'],
+  'nhua-pro-vip-experience': ['combo-the-full-vietnamese-experience', 'combo-premium-vietnamese-experience', 'combo-vietnamese-experience'],
+};
+const related = RELATED[s.key]?.map(serviceByKey) ?? servicesIn(s.group).filter((x) => x.key !== s.key).slice(0, 3);
+const viName = displayName(s.t.vi.name);
+const chat = chatLink(lang, branches[0], `${t(lang, 'f_greeting')} ${name}${viName !== name ? ` / ${viName}` : ''} (${servicePrice(s, lang)})`);
+---
+<Layout ctx={ctx} path={path} title={name} description={intro} image={imageMeta(s.image)}
+  schema={[serviceSchema(s, lang, new URL(url(ctx, path), Astro.site).href)]}>
+  <PageHead ctx={ctx} title={name} lead={intro} trail={[{ label: t(lang, 'services'), path: 'services' }, { label: t(lang, `group_${s.group}`), path: `services#${s.group}` }]} />
+
+  <div class="container detail service-detail" style="padding-bottom: var(--section);">
+    <div class="stack" style="gap: 40px;">
+      {s.image && <div class="hero-img"><Img src={s.image} alt={name} loading="eager" priority widths={[600, 1000, 1400]} sizes="(max-width: 900px) 100vw, 760px" /></div>}
+      {body && (
+        <details class="more">
+          <summary>{t(lang, 'aboutService')}</summary>
+          <div class="prose" set:html={body} />
+        </details>
+      )}
+    </div>
+    <aside class="detail-aside" aria-label={name}>
+      <dl class="facts">
+        <div><dt>{t(lang, 'price')}</dt><dd class="price">{servicePrice(s, lang)}</dd></div>
+        <div><dt>{t(lang, 'duration')}</dt><dd>{durationLabel(s, lang) || t(lang, 'confirmOnBooking')}</dd></div>
+      </dl>
+      {isPackage && tr.includes.length > 0 && (
+        <div class="stack" style="gap: 10px;">
+          <strong>{t(lang, 'included')}</strong>
+          <ul class="checklist">{tr.includes.map((i) => <li>{sentence(i)}</li>)}</ul>
+        </div>
+      )}
+      <a class="btn btn-primary" href={bookingUrl(ctx, { service: s.key })}>{t(lang, 'bookNow')}</a>
+      {lang === 'zh'
+        ? <a class="btn btn-ghost" href={bookingUrl(ctx, { service: s.key })}>{t(lang, 'wechatLabel')}</a>
+        : <a class="btn btn-ghost" href={chat.href} rel="noopener">{chat.label}</a>}
+      <p class="muted" style="font-size: 14px;">{t(lang, 'pricesNote')}</p>
+    </aside>
+  </div>
+
+  {related.length > 0 && (
+    <section class="section alt">
+      <div class="container stack" style="gap: 32px;">
+        <h2 class="display h2">{isPackage ? t(lang, 'morePackages') : t(lang, 'moreServices')}</h2>
+        <div class="grid">{related.map((r) => <ServiceCard ctx={ctx} service={r} />)}</div>
+      </div>
+    </section>
+  )}
+</Layout>

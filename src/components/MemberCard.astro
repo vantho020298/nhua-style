@@ -1,0 +1,21 @@
+---
+import Img from './Img.astro';
+import { t, yearsText } from '../i18n/ui';
+import { url, type Ctx } from '../lib/routes';
+import type { Member } from '../lib/data';
+
+interface Props { ctx: Ctx; member: Member; }
+const { ctx, member: m } = Astro.props;
+const { lang } = ctx;
+const href = url(ctx, `team/${m.key}`);
+---
+<article class="card">
+  <a class="card-media" style="aspect-ratio: 4 / 5;" href={href} tabindex="-1" aria-hidden="true">
+    <Img src={m.image} alt="" widths={[360, 720]} sizes="(max-width: 640px) 100vw, 300px" />
+  </a>
+  <div class="card-body">
+    <div class="card-meta"><span>{t(lang, `role_${m.role}`)}</span>{m.years && <span>{yearsText(lang, m.years, true)}</span>}</div>
+    <h3 class="card-title"><a href={href}>{m.name}</a></h3>
+    <p class="card-text">{m.t[lang].summary}</p>
+  </div>
+</article>

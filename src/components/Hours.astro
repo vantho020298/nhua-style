@@ -1,0 +1,9 @@
+---
+import { t } from '../i18n/ui';
+import { hours } from '../config/site';
+import type { Lang } from '../i18n/langs';
+
+interface Props { lang: Lang; }
+const { lang } = Astro.props;
+---
+<span>{t(lang, 'monday')} <span class="nowrap">{hours.monday.open} – {hours.monday.close}</span><br />{t(lang, 'tueSun')} <span class="nowrap">{hours.other.open} – {hours.other.close}</span></span>

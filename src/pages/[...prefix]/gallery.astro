@@ -1,0 +1,64 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHead from '../../components/PageHead.astro';
+import Videos from '../../components/Videos.astro';
+import { Picture } from 'astro:assets';
+import { t } from '../../i18n/ui';
+import { contextPaths, url, type Ctx } from '../../lib/routes';
+import { serviceByKey, displayName } from '../../lib/data';
+import { shopPhotos } from '../../lib/images';
+import { site } from '../../config/site';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+// Which service each shop photo shows, for its caption and link.
+const PHOTO_SERVICE: Record<string, string> = {
+  'cut-fade.jpg': 'cat-toc', 'cut-quiff.jpg': 'cat-toc', 'cut-side.jpg': 'ep-side', 'barber-work.jpg': 'cat-toc', 'barber-door.jpg': 'cat-toc',
+  'cut-blonde.jpg': 'tay-toc-nhuom-mau', 'cut-color.jpg': 'nhuom-toc-co-ban', 'ear.jpg': 'lay-ray-tai',
+  'spa-face.jpg': 'goi-dau-duong-sinh', 'spa-foot.jpg': 'massage-chan',
+};
+const { lang } = ctx;
+---
+<Layout ctx={ctx} path="gallery" title={t(lang, 'gallery')} description={t(lang, 'galleryLead')}>
+  <PageHead ctx={ctx} title={t(lang, 'gallery')} lead={t(lang, 'galleryLead')} />
+  <section class="section" style="padding-top: 0;">
+    <div class="container stack" style="gap: 32px;">
+      <div class="row" style="justify-content: space-between; align-items: flex-end; gap: 16px;">
+        <h2 class="display h2">{t(lang, 'photos')}</h2>
+        <span class="row" style="gap: 16px;">
+          <a class="btn btn-ghost btn-sm" href={site.social.instagram} rel="noopener">Instagram</a>
+          <a class="btn btn-ghost btn-sm" href={site.social.tiktok} rel="noopener">TikTok</a>
+        </span>
+      </div>
+      <div class="masonry">
+        {shopPhotos.map((p) => {
+          const service = PHOTO_SERVICE[p.name] && serviceByKey(PHOTO_SERVICE[p.name]);
+          const caption = service ? displayName(service.t[lang].name) : site.name;
+          return (
+            <figure>
+              <Picture src={p.meta} alt={caption} formats={['avif', 'webp']} widths={[400, 800]} sizes="(max-width: 640px) 50vw, 300px" loading="lazy" />
+              <figcaption>{service ? <a href={url(ctx, `services/${service.key}`)}>{caption} →</a> : caption}</figcaption>
+            </figure>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+  <section class="section alt">
+    <div class="container stack" style="gap: 32px;">
+      <h2 class="display h2">{t(lang, 'videos')}</h2>
+      <Videos ctx={ctx} />
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .masonry { columns: 4 220px; column-gap: 16px; }
+  .masonry figure { break-inside: avoid; margin-bottom: 16px; }
+  .masonry :global(img) { width: 100%; border-radius: var(--radius); }
+  .masonry figcaption { font-size: 14px; color: var(--muted); padding-top: 6px; }
+  .masonry figcaption a:hover { text-decoration: underline; }
+  @media (max-width: 640px) { .masonry { columns: 2; column-gap: 10px; } }
+</style>

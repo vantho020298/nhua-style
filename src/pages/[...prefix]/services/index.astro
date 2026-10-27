@@ -1,0 +1,61 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import ServiceCard from '../../../components/ServiceCard.astro';
+import PriceList from '../../../components/PriceList.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, bookingUrl, url, type Ctx } from '../../../lib/routes';
+import { SERVICE_GROUPS, servicesIn, serviceByKey, displayName, servicePrice } from '../../../lib/data';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+// Packages read best as cards with their photos; single and chemical services as a price list.
+const asCards = new Set(['signature', 'relax']);
+const groups = SERVICE_GROUPS;
+const haircut = serviceByKey('cat-toc');
+---
+<Layout ctx={ctx} path="services" title={t(lang, 'services')} description={t(lang, 'servicesLead')}>
+  <PageHead ctx={ctx} title={t(lang, 'services')} lead={t(lang, 'servicesLead')}>
+    <nav class="row" style="gap: 8px;" aria-label={t(lang, 'services')}>
+      {groups.map((g) => <a class="btn btn-ghost btn-sm" href={`#${g}`}>{t(lang, `group_${g}`)}</a>)}
+    </nav>
+    <a class="btn btn-primary" style="align-self: flex-start;" href={bookingUrl(ctx, { service: haircut.key })}>{t(lang, 'justHaircut')} {displayName(haircut.t[lang].name)} · {servicePrice(haircut, lang)}</a>
+    <aside class="guide">
+      <strong>{t(lang, 'guideTitle')}</strong>
+      <ul>
+        <li>{t(lang, 'guide1')}</li>
+        <li>{t(lang, 'guide2')}</li>
+        <li>{t(lang, 'guide3')}</li>
+      </ul>
+    </aside>
+  </PageHead>
+
+  {groups.map((g, i) => (
+    <section id={g} class:list={['section', { alt: i % 2 === 0 }]} style="scroll-margin-top: 72px;">
+      <div class="container stack" style="gap: 32px;">
+        <div class="stack" style="gap: 8px;">
+          <h2 class="display h2">{t(lang, `group_${g}`)}</h2>
+          <p class="muted">{t(lang, `groupLead_${g}`)}</p>
+        </div>
+        {asCards.has(g) ? (
+          <div class="grid">{servicesIn(g).map((s) => <ServiceCard ctx={ctx} service={s} />)}</div>
+        ) : (
+          <PriceList ctx={ctx} items={servicesIn(g)} />
+        )}
+      </div>
+    </section>
+  ))}
+
+  <section class="container section stack" style="gap: 16px; align-items: flex-start;">
+    <p class="muted">{t(lang, 'pricesNote')}</p>
+    <a class="btn btn-primary" href={bookingUrl(ctx)}>{t(lang, 'bookNow')}</a>
+  </section>
+</Layout>
+
+<style>
+  .guide { display: grid; gap: 8px; max-width: 720px; padding: 18px 22px; border: 1px solid var(--line); border-radius: min(var(--radius), 14px); background: var(--surface); }
+  .guide ul { padding-left: 1.2em; display: grid; gap: 4px; color: var(--muted); }
+</style>

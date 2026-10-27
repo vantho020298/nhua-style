@@ -1,0 +1,21 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHead from '../../components/PageHead.astro';
+import Branches from '../../components/Branches.astro';
+import { t } from '../../i18n/ui';
+import { contextPaths, type Ctx } from '../../lib/routes';
+import { businessSchema } from '../../lib/schema';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const lead = t(lang, 'locationsLead');
+---
+<Layout ctx={ctx} path="locations" title={t(lang, 'locations')} description={lead} schema={[businessSchema(Astro.site!.href)]}>
+  <PageHead ctx={ctx} title={t(lang, 'locationsTitle')} lead={lead} />
+  <section class="container" style="padding-bottom: var(--section);">
+    <Branches ctx={ctx} map />
+  </section>
+</Layout>

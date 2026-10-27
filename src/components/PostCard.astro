@@ -1,0 +1,19 @@
+---
+import Img from './Img.astro';
+import { url, type Ctx } from '../lib/routes';
+import type { Post } from '../lib/data';
+
+interface Props { ctx: Ctx; post: Post; }
+const { ctx, post: p } = Astro.props;
+const { lang } = ctx;
+const href = url(ctx, `blog/${p.key}`);
+---
+<article class="card">
+  <a class="card-media" style="aspect-ratio: 16 / 10;" href={href} tabindex="-1" aria-hidden="true">
+    <Img src={p.image} alt="" widths={[400, 800]} sizes="(max-width: 640px) 100vw, 400px" />
+  </a>
+  <div class="card-body">
+    <h3 class="card-title" style="font-size: 22px;"><a href={href}>{p.t[lang].title}</a></h3>
+    <p class="card-text">{p.t[lang].excerpt}</p>
+  </div>
+</article>

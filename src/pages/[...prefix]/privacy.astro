@@ -1,0 +1,22 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PageHead from '../../components/PageHead.astro';
+import { t } from '../../i18n/ui';
+import { contextPaths, type Ctx } from '../../lib/routes';
+import { pages, tidyPage } from '../../lib/data';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const page = pages.privacy[lang] ?? pages.privacy.en!;
+// The WordPress page opens with an internal drafting note ("review before publishing"); it is not shown.
+const body = tidyPage(page.body, { dropFirstParagraph: true });
+---
+<Layout ctx={ctx} path="privacy" title={t(lang, 'privacy')}>
+  <PageHead ctx={ctx} title={t(lang, 'privacy')} />
+  <section class="container" style="padding-bottom: var(--section);">
+    <div class="prose" set:html={body} />
+  </section>
+</Layout>

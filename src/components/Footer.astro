@@ -1,0 +1,63 @@
+---
+import { t } from '../i18n/ui';
+import { url, type Ctx } from '../lib/routes';
+import { branches, formatPhone, telHref } from '../lib/data';
+import { site } from '../config/site';
+
+interface Props { ctx: Ctx; path: string; }
+const { ctx } = Astro.props;
+const { lang } = ctx;
+const year = new Date().getFullYear();
+const pages = [
+  { path: 'booking', label: t(lang, 'bookNow') },
+  { path: 'services', label: t(lang, 'services') },
+  { path: 'locations', label: t(lang, 'locations') },
+  { path: 'team', label: t(lang, 'team') },
+  { path: 'products', label: t(lang, 'products') },
+  { path: 'gallery', label: t(lang, 'gallery') },
+  { path: 'about', label: t(lang, 'about') },
+];
+const SOCIAL_LABELS: Record<string, string> = { facebook: 'Facebook', instagram: 'Instagram', tiktok: 'TikTok', youtube: 'YouTube' };
+const social = Object.entries(site.social).map(([key, href]) => ({ key, href, label: SOCIAL_LABELS[key] ?? key }));
+// One number serves every shop, so it is listed once instead of under each shop.
+const phone = branches[0].phone;
+---
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="stack" style="gap: 12px;">
+      <strong class="display" style="font-size: 24px;">{site.name}</strong>
+      <p>{t(lang, 'footerTagline')}</p>
+      <p>{t(lang, 'openDaily')} · 08:30 – 20:00<br />{t(lang, 'mondayFrom')}</p>
+      <p><a class="nowrap" href={telHref(phone)}>☎ {formatPhone(phone)}</a> · Zalo · WhatsApp · WeChat</p>
+    </div>
+    <div>
+      <h2>{t(lang, 'locations')}</h2>
+      <ul>
+        {branches.map((b) => (
+          <li>
+            <a href={url(ctx, 'locations') + '#' + b.key}>{b.name}</a><br />
+            <span>{b.address}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div>
+      <h2>{t(lang, 'menu')}</h2>
+      <ul>
+        {pages.map((p) => <li><a href={url(ctx, p.path)}>{p.label}</a></li>)}
+      </ul>
+    </div>
+    {social.length > 0 && (
+      <div>
+        <h2>{t(lang, 'followUs')}</h2>
+        <ul>
+          {social.map((s) => <li><a href={s.href} rel="noopener">{s.label}</a></li>)}
+        </ul>
+      </div>
+    )}
+  </div>
+  <div class="container footer-bottom">
+    <span>© {year} {site.name} · <a href={`mailto:${site.email}`}>{site.email}</a></span>
+    <a href={url(ctx, 'privacy')}>{t(lang, 'privacy')}</a>
+  </div>
+</footer>

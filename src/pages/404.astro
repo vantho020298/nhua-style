@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { t } from '../i18n/ui';
+import { LANGS } from '../i18n/langs';
+import { url, type Ctx } from '../lib/routes';
+import { site } from '../config/site';
+
+const ctx: Ctx = { lang: 'vi' };
+---
+<Layout ctx={ctx} path="" title={t('vi', 'notFoundTitle')} notFound>
+  <section class="container section stack" style="gap: 20px; align-items: flex-start; min-height: 50vh;">
+    <p class="eyebrow">404</p>
+    {LANGS.map((l) => (
+      <div class="stack nf" style="gap: 16px; align-items: flex-start;" lang={l} data-lang={l} hidden={l !== 'vi' && l !== 'en'}>
+        {l === 'vi' ? <h1 class="display h2">{t(l, 'notFoundTitle')}</h1> : <p class="display h2">{t(l, 'notFoundTitle')}</p>}
+        <p class="muted">{t(l, 'notFoundText')}</p>
+        <a class="btn btn-primary" href={url({ ...ctx, lang: l })}>{t(l, 'home')}</a>
+      </div>
+    ))}
+  </section>
+</Layout>
+
+<script is:inline define:vars={{ siteName: site.name }}>
+  // One static 404 serves every language: show the one in the requested URL (/en/…, /ja/…).
+  const langs = [...document.querySelectorAll('.nf')].map((el) => el.dataset.lang);
+  const wanted = location.pathname.split('/').find((part) => langs.includes(part)) ?? 'vi';
+  document.querySelectorAll('.nf').forEach((el) => (el.hidden = el.dataset.lang !== wanted));
+  const shown = document.querySelector(`.nf[data-lang="${wanted}"]`);
+  if (shown) {
+    document.documentElement.lang = shown.lang;
+    document.title = `${shown.querySelector('.display')?.textContent ?? ''} · ${siteName}`;
+  }
+</script>

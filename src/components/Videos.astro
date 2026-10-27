@@ -1,0 +1,37 @@
+---
+// YouTube embeds that load only after a click (no tracking or weight up front).
+import Img from './Img.astro';
+import { t } from '../i18n/ui';
+import { videos } from '../lib/data';
+import type { Ctx } from '../lib/routes';
+
+interface Props { ctx: Ctx; limit?: number; }
+const { ctx, limit } = Astro.props;
+const list = limit ? videos.slice(0, limit) : videos;
+---
+<div class="grid">
+  {list.map((v) => (
+    <figure>
+      <div class="video" data-youtube={v.youtube}>
+        <button type="button" aria-label={t(ctx.lang, 'playVideo', { title: v.title })}>
+          <Img src={v.thumb} alt="" widths={[400, 760]} sizes="(max-width: 640px) 100vw, 400px" />
+          <span class="play" aria-hidden="true"></span>
+        </button>
+      </div>
+      <figcaption class="video-title" lang="en">{v.title}</figcaption>
+    </figure>
+  ))}
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.video[data-youtube]').forEach((box) => {
+    box.querySelector('button')?.addEventListener('click', () => {
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${box.dataset.youtube}?autoplay=1&rel=0`;
+      frame.title = box.querySelector('button')?.getAttribute('aria-label') ?? 'YouTube';
+      frame.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      frame.allowFullscreen = true;
+      box.replaceChildren(frame);
+    });
+  });
+</script>

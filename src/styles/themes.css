@@ -1,0 +1,18 @@
+/* Design tokens. Every shared component reads only these variables. */
+:root {
+  --cjk: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Apple SD Gothic Neo", "Malgun Gothic", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK JP", sans-serif;
+  --font-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, var(--cjk);
+  --container: 1200px;
+  --gutter: 24px;
+  --section: clamp(64px, 9vw, 104px);
+}
+
+/* Colours of the shop's printed menu: cream paper, navy and oxblood, with the red logo. */
+:root {
+  --bg: #FDF6EC; --surface: #FFFBF4; --surface-2: #F4E8D6; --text: #17263D; --muted: #3B4B63; --dim: #56657B;
+  --line: #E5D6BF; --line-strong: #1F4B79; --accent: #A3221B; --on-accent: #FDF6EC; --link: #1F4B79; --accent-2: #1F4B79;
+  --header-bg: #FDF6EC; --header-fg: #1F4B79; --footer-bg: #1F4B79; --footer-fg: #FDF6EC;
+  --font-display: Oswald, "Arial Narrow", sans-serif, var(--cjk); --display-case: uppercase; --display-weight: 700; --display-tracking: .01em;
+  --radius: 22px; --btn-radius: 999px; --border-w: 1px;
+  --red: #A3221B; --red-deep: #7B170F; --navy: #1F4B79;
+}

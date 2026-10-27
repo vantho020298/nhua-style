@@ -1,0 +1,15 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import HomeMenu from '../../components/home/HomeMenu.astro';
+import { contextPaths, type Ctx } from '../../lib/routes';
+import { businessSchema } from '../../lib/schema';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+
+const { ctx } = Astro.props as { ctx: Ctx };
+---
+<Layout ctx={ctx} schema={[businessSchema(Astro.site!.href)]}>
+  <HomeMenu ctx={ctx} />
+</Layout>

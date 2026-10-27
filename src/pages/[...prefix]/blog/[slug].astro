@@ -1,0 +1,37 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import PostCard from '../../../components/PostCard.astro';
+import Img from '../../../components/Img.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, bookingUrl, type Ctx } from '../../../lib/routes';
+import { posts, formatDate, type Post } from '../../../lib/data';
+import { imageMeta } from '../../../lib/images';
+
+export function getStaticPaths() {
+  return contextPaths(() => posts.map((p) => ({ slug: p.key })));
+}
+
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const p = posts.find((x) => x.key === Astro.params.slug) as Post;
+const tr = p.t[lang];
+const more = posts.filter((x) => x.key !== p.key).slice(0, 3);
+---
+<Layout ctx={ctx} path={`blog/${p.key}`} title={tr.title} description={tr.excerpt} image={imageMeta(p.image)}>
+  <PageHead ctx={ctx} title={tr.title} trail={[{ label: t(lang, 'blog'), path: 'blog' }]}>
+    <p class="muted"><time datetime={p.date}>{formatDate(p.date, lang)}</time></p>
+  </PageHead>
+  <article class="container stack" style="gap: 40px; padding-bottom: var(--section);">
+    {p.image && <div class="hero-img" style="max-width: 960px;"><Img src={p.image} alt="" loading="eager" widths={[600, 1000, 1400]} sizes="(max-width: 1008px) 100vw, 960px" /></div>}
+    <p class="lead" style="max-width: 720px;">{tr.excerpt}</p>
+    <div class="prose" set:html={tr.body} />
+    <a class="btn btn-primary" style="align-self: flex-start;" href={bookingUrl(ctx)}>{t(lang, 'bookNow')}</a>
+  </article>
+  <section class="section alt">
+    <div class="container stack" style="gap: 32px;">
+      <h2 class="display h2">{t(lang, 'morePosts')}</h2>
+      <div class="grid">{more.map((m) => <PostCard ctx={ctx} post={m} />)}</div>
+    </div>
+  </section>
+</Layout>

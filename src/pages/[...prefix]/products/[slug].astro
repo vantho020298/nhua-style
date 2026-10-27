@@ -1,0 +1,46 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import Img from '../../../components/Img.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, type Ctx } from '../../../lib/routes';
+import { products, branches, formatPrice, dropClosingSection, chatLink, type Product } from '../../../lib/data';
+import { imageMeta } from '../../../lib/images';
+import { site } from '../../../config/site';
+
+export function getStaticPaths() {
+  return contextPaths(() => products.map((p) => ({ slug: p.key })));
+}
+
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const p = products.find((x) => x.key === Astro.params.slug) as Product;
+const name = p.t[lang].name;
+const others = products.filter((x) => x.key !== p.key).slice(0, 3);
+const chat = chatLink(lang, branches[0], `${t(lang, 'askAbout')}: ${name}`);
+---
+<Layout ctx={ctx} path={`products/${p.key}`} title={name} description={p.t[lang].summary} image={imageMeta(p.image)}>
+  <PageHead ctx={ctx} title={name} lead={p.t[lang].summary} trail={[{ label: t(lang, 'products'), path: 'products' }]} />
+  <div class="container detail" style="padding-bottom: var(--section);">
+    <div class="stack" style="gap: 40px;">
+      <div class="hero-img" style="aspect-ratio: 4 / 3;"><Img src={p.image} alt={name} loading="eager" widths={[600, 1000]} sizes="(max-width: 900px) 100vw, 760px" /></div>
+      <div class="prose" set:html={dropClosingSection(p.t[lang].body)} />
+    </div>
+    <aside class="detail-aside">
+      <dl class="facts">
+        {p.brand && <div><dt>{t(lang, 'brand')}</dt><dd>{p.brand}</dd></div>}
+        <div><dt>{t(lang, 'price')}</dt><dd class="price">{formatPrice(p.price, lang)}</dd></div>
+      </dl>
+      <p class="muted">{t(lang, 'buyInStore')}</p>
+      <a class="btn btn-primary" href={chat.href} rel="noopener">{t(lang, 'askAbout')} · {chat.label}</a>
+      {site.messenger && <a class="btn btn-ghost" href={site.messenger} rel="noopener">Messenger</a>}
+    </aside>
+  </div>
+  <section class="section alt">
+    <div class="container stack" style="gap: 32px;">
+      <h2 class="display h2">{t(lang, 'otherProducts')}</h2>
+      <div class="grid">{others.map((o) => <ProductCard ctx={ctx} product={o} />)}</div>
+    </div>
+  </section>
+</Layout>

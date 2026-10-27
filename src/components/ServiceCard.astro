@@ -1,0 +1,26 @@
+---
+import Img from './Img.astro';
+import { t } from '../i18n/ui';
+import { url, bookingUrl, type Ctx } from '../lib/routes';
+import { cardText, displayName, servicePrice, durationLabel, type Service } from '../lib/data';
+
+interface Props { ctx: Ctx; service: Service; tag?: string; headingLevel?: 'h2' | 'h3'; }
+const { ctx, service: s, tag, headingLevel: H = 'h3' } = Astro.props;
+const { lang } = ctx;
+const href = url(ctx, `services/${s.key}`);
+const time = durationLabel(s, lang);
+---
+<article class="card">
+  <a class="card-media" href={href} tabindex="-1" aria-hidden="true">
+    <Img src={s.image} alt="" sizes="(max-width: 640px) 100vw, 400px" widths={[400, 800]} />
+  </a>
+  <div class="card-body">
+    {(time || tag) && <div class="card-meta"><span>{time}</span><span>{tag}</span></div>}
+    <H class="card-title"><a href={href}>{displayName(s.t[lang].name)}</a></H>
+    <p class:list={['card-text', { full: s.group === 'signature' || s.group === 'relax' }]}>{cardText(s, lang)}</p>
+    <div class="card-foot">
+      <span class="price">{servicePrice(s, lang)}</span>
+      <a class="btn btn-ghost btn-sm" href={bookingUrl(ctx, { service: s.key })} aria-label={`${t(lang, 'book')}: ${displayName(s.t[lang].name)}`}>{t(lang, 'book')}</a>
+    </div>
+  </div>
+</article>

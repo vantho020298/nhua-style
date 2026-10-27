@@ -1,0 +1,22 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import ProductCard from '../../../components/ProductCard.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, type Ctx } from '../../../lib/routes';
+import { products } from '../../../lib/data';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const lead = t(lang, 'productsLead');
+---
+<Layout ctx={ctx} path="products" title={t(lang, 'products')} description={lead}>
+  <PageHead ctx={ctx} title={t(lang, 'products')} lead={lead} />
+  <section class="container" style="padding-bottom: var(--section);">
+    <div class="grid">{products.map((p) => <ProductCard ctx={ctx} product={p} />)}</div>
+    <p class="muted" style="margin-top: 32px;">{t(lang, 'buyInStore')} {t(lang, 'pricesNote')}</p>
+  </section>
+</Layout>

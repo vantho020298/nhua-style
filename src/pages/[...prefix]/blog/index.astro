@@ -1,0 +1,20 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import PostCard from '../../../components/PostCard.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, type Ctx } from '../../../lib/routes';
+import { posts } from '../../../lib/data';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+---
+<Layout ctx={ctx} path="blog" title={t(lang, 'blog')} description={t(lang, 'blogLead')}>
+  <PageHead ctx={ctx} title={t(lang, 'blog')} lead={t(lang, 'blogLead')} />
+  <section class="container" style="padding-bottom: var(--section);">
+    <div class="grid">{posts.map((p) => <PostCard ctx={ctx} post={p} />)}</div>
+  </section>
+</Layout>

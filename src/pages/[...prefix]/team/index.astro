@@ -1,0 +1,29 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import MemberCard from '../../../components/MemberCard.astro';
+import { t } from '../../../i18n/ui';
+import { contextPaths, type Ctx } from '../../../lib/routes';
+import { team } from '../../../lib/data';
+
+export function getStaticPaths() {
+  return contextPaths();
+}
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const groups = [
+  { title: t(lang, 'barbers'), members: team.filter((m) => m.role === 'barber') },
+  { title: t(lang, 'skinners'), members: team.filter((m) => m.role === 'skinner') },
+];
+---
+<Layout ctx={ctx} path="team" title={t(lang, 'team')} description={t(lang, 'teamLead')}>
+  <PageHead ctx={ctx} title={t(lang, 'team')} lead={t(lang, 'teamLead')} />
+  {groups.map((g, i) => (
+    <section class:list={['section', { alt: i === 1 }]} style={i === 0 ? 'padding-top: 0;' : undefined}>
+      <div class="container stack" style="gap: 32px;">
+        <h2 class="display h2">{g.title}</h2>
+        <div class="grid">{g.members.map((m) => <MemberCard ctx={ctx} member={m} />)}</div>
+      </div>
+    </section>
+  ))}
+</Layout>

@@ -1,0 +1,42 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import PageHead from '../../../components/PageHead.astro';
+import MemberCard from '../../../components/MemberCard.astro';
+import Img from '../../../components/Img.astro';
+import { t, yearsText } from '../../../i18n/ui';
+import { contextPaths, bookingUrl, type Ctx } from '../../../lib/routes';
+import { team, dropClosingSection, type Member } from '../../../lib/data';
+import { imageMeta } from '../../../lib/images';
+
+export function getStaticPaths() {
+  return contextPaths(() => team.map((m) => ({ slug: m.key })));
+}
+
+const { ctx } = Astro.props as { ctx: Ctx };
+const { lang } = ctx;
+const m = team.find((x) => x.key === Astro.params.slug) as Member;
+const others = team.filter((x) => x.key !== m.key && x.role === m.role).slice(0, 4);
+// The body opens with "N years of experience", already shown in the sidebar.
+const body = dropClosingSection(m.t[lang].body.replace(/^<p><strong>[^<]*<\/strong><\/p>/, ''));
+---
+<Layout ctx={ctx} path={`team/${m.key}`} title={m.name} description={m.t[lang].summary} image={imageMeta(m.image)}>
+  <PageHead ctx={ctx} title={m.name} lead={m.t[lang].summary} trail={[{ label: t(lang, 'team'), path: 'team' }]} />
+  <div class="container detail detail-left" style="padding-bottom: var(--section);">
+    <aside class="stack" style="gap: 16px;">
+      <div style="border-radius: var(--radius); overflow: hidden; aspect-ratio: 4 / 5;">
+        <Img class="cover" src={m.image} alt={m.name} loading="eager" widths={[400, 760]} sizes="(max-width: 900px) 100vw, 380px" />
+      </div>
+      <dl class="facts">
+        <div><dt>{t(lang, `role_${m.role}`)}</dt><dd>{m.years ? yearsText(lang, m.years) : ''}</dd></div>
+      </dl>
+      <a class="btn btn-primary" href={bookingUrl(ctx, { barber: m.key })}>{t(lang, 'bookWith', { name: m.name })}</a>
+    </aside>
+    <div class="prose" set:html={body} />
+  </div>
+  <section class="section alt">
+    <div class="container stack" style="gap: 32px;">
+      <h2 class="display h2">{t(lang, 'otherTeam')}</h2>
+      <div class="grid">{others.map((o) => <MemberCard ctx={ctx} member={o} />)}</div>
+    </div>
+  </section>
+</Layout>

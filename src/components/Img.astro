@@ -1,0 +1,45 @@
+---
+// Responsive WebP image for a file in src/assets/photos or src/assets/media.
+import { Picture } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: string | null;
+  alt: string;
+  widths?: number[];
+  sizes?: string;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  style?: string;
+  /** The page's main (LCP) image: fetched before other eager images. */
+  priority?: boolean;
+}
+
+const files = import.meta.glob<{ default: ImageMetadata }>('/src/assets/{photos,media}/*.{jpg,jpeg,png,webp}', { eager: true });
+const lookup = (name: string) =>
+  files[`/src/assets/photos/${name}`]?.default ?? files[`/src/assets/media/${name}`]?.default;
+
+const { src, alt, widths = [400, 800, 1200], sizes = '(max-width: 640px) 100vw, 50vw', class: cls, loading = 'lazy', style, priority = false } = Astro.props;
+const image = src ? lookup(src) : undefined;
+if (src && !image) throw new Error(`Image not found: ${src}`);
+// Astro falls back to PNG for WebP/PNG sources; these are photos, so a JPEG fallback is a fraction of the size.
+const fallback = image && ['png', 'webp', 'avif', 'tiff'].includes(image.format) ? ('jpg' as const) : undefined;
+const usable = image ? widths.filter((w) => w <= image.width) : [];
+---
+{image ? (
+  <Picture
+    src={image}
+    alt={alt}
+    formats={['avif', 'webp']}
+    widths={usable.length ? usable : [image.width]}
+    sizes={sizes}
+    class={cls}
+    style={style}
+    loading={loading}
+    fetchpriority={priority ? 'high' : undefined}
+    fallbackFormat={fallback}
+    decoding="async"
+  />
+) : (
+  <div class:list={[cls, 'img-missing']} style={style} role="img" aria-label={alt}></div>
+)}
